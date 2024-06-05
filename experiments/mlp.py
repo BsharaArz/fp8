@@ -65,4 +65,5 @@ def test_mlp():
 def main():
   return test_mlp()
 
-main()
+if name == "main":
+  main()
