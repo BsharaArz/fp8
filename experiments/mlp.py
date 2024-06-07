@@ -2,12 +2,12 @@ from jax import numpy as jnp
 import jax
 from typing_extensions import NamedTuple
 
+#MLP LAYER
+
 class MLP(NamedTuple):
   '''
   whatever parameters you need - usually the up projection and down projection
   '''
-  d_model: int
-  d_ff: int
   layers: list
 
 def init_mlp(prng_key: jax.Array, d_model: int, d_ff: int):
@@ -16,10 +16,10 @@ def init_mlp(prng_key: jax.Array, d_model: int, d_ff: int):
   '''
   #initialize layers
   initializer = jax.nn.initializers.normal(0.01)
-  layers = [[initializer(prng_key, (d_model,d_ff), jnp.float32), initializer(prng_key, (d_ff,), jnp.float32)], [initializer(prng_key, (d_ff, d_model), jnp.float32), initializer(prng_key, (d_model,), jnp.float32)]]
+  layers = [[initializer(prng_key, (d_model,d_ff)), initializer(prng_key, (d_ff,))], [initializer(prng_key, (d_ff, d_model)), initializer(prng_key, (d_model,))]]
 
   #return instance
-  return MLP(d_model, d_ff, layers)
+  return MLP(layers)
 
 def forward_mlp(params: MLP, seq: jax.Array):
   '''
@@ -34,36 +34,3 @@ def forward_mlp(params: MLP, seq: jax.Array):
 
   return activations
 
-def test_mlp():
-  '''
-  Create a random tensor for sequence
-  Create the MLP using init_mlp
-  Pass the sequence through the MLP using forward_mlp and capture the output
-  Assert that the output if of the correct shape
-  '''
-  #params
-  prng_key = jax.random.PRNGKey(0)
-  d_model = 512
-  d_ff = 2048
-  batch_size = 32
-  sequence_length = 16
-
-  #create seq
-  initializer = jax.nn.initializers.normal(0.01)
-  seq = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
-
-  #mlp transformation
-  mlp = init_mlp(prng_key, d_model, d_ff)
-  output = forward_mlp(mlp, seq)
-
-  #compare outputs
-  print('input shape: ')
-  print(seq.shape)
-  print('output shape: ')
-  print(output.shape)
-
-def main():
-  return test_mlp()
-
-if name == "main":
-  main()

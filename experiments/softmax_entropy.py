@@ -9,9 +9,9 @@ output: shape (batch_size, sequence_length)
 use optax function that combines softmax and cross entropy
 '''
 
-def calculate(logits: jax.Array, labels: jax.Array):
+def softmax_cross_entropy(logits: jax.Array, labels: jax.Array):
   '''
-  logits/labels have shape (batch_size, sequence_length, d_model)
+  logits/labels has shape (batch_size, sequence_length, d_model)
   logits from training, labels from validation
   '''
   return optax.losses.softmax_cross_entropy(logits, labels)
@@ -29,7 +29,7 @@ def test():
   labels = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
 
   #calculate softmax + cross entropy
-  output = calculate(logits, labels)
+  output = softmax_cross_entropy(logits, labels)
   print(output)
 
   #check that shape = (batch_size, sequence_length)
