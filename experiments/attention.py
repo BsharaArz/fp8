@@ -1,5 +1,24 @@
 import jax
 import jax.numpy as jnp
+from typing_extensions import NamedTuple
+
+class Attention(NamedTuple):
+  q: jax.Array
+  k: jax.Array
+  v: jax.Array
+
+def init_attention(prng_key: jax.Array, batch_size: int, sequence_length: int, d_model: int):
+  #initialize qkv
+  initializer = jax.nn.initializers.normal(0.01)
+  q = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
+  k = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
+  v = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
+
+  return Attention(q, k, v)
+
+def forward_attention(params: Attention, num_heads: int):
+  #conduct multi head attention
+  return multi_head_attention(params.q, params.k, params.v, num_heads)
 
 def scaled_dot_product(q, k, v):
   '''
@@ -18,7 +37,7 @@ def multi_head_attention(q, k, v, num_heads):
   '''
   batch_size, seq_length, d_model = q.shape
 
-  #reshape qkv based on num_heaeds
+  #reshape qkv based on num_heads
   q = q.reshape(batch_size, seq_length, num_heads, -1) #(batch_size, seq_length, num_heads, d_head)
   k = k.reshape(batch_size, seq_length, num_heads, -1)
   v = v.reshape(batch_size, seq_length, num_heads, -1)
@@ -41,15 +60,12 @@ def test():
   batch_size = 32
   sequence_length = 16
 
-  #initialize qkv
-  initializer = jax.nn.initializers.normal(0.01)
-  q = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
-  k = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
-  v = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
+  #init attn
+  attn = init_attention(prng_key, batch_size, sequence_length, d_model)
 
-  #pass through attention
+  #forward pass
   num_heads = 8
-  values, attention = multi_head_attention(q, k, v, num_heads)
+  values, attention = forward_attention(attn, num_heads)
 
   #check shape
   print(values.shape)
