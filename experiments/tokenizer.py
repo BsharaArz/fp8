@@ -3,12 +3,12 @@
 from transformers import AlbertTokenizer
 tokenizer = AlbertTokenizer.from_pretrained('albert-base-v2')
 
-def tokenize(input):
-  return tokenizer.encode(input)
+def tokenize(x):
+  return tokenizer.encode(x, truncation=True, max_length=10)
 
 def test():
-  input = "hello"
-  print(tokenize(input))
+  x = "hello"
+  print(tokenize(x))
 
 def main():
   test()

@@ -34,3 +34,5 @@ def forward_mlp(params: MLP, seq: jax.Array):
 
   return activations
 
+if name == "main":
+  main()
