@@ -9,7 +9,11 @@ class TransformerBlock(NamedTuple):
   attn_layer: attention.Attention
   mlp_layer: mlp.MLP
 
-def init_block(attn_layer: attention.Attention, mlp_layer: mlp.MLP):
+def init_block(prng_key, batch_size, sequence_length, d_model, d_ff):
+  #initialize mlp/attention layers
+  attn_layer = attention.init_attention(prng_key, batch_size, sequence_length, d_model)
+  mlp_layer = mlp.init_mlp(prng_key, d_model, d_ff)
+
   return TransformerBlock(attn_layer, mlp_layer)
 
 def normalize(seq: jax.Array, epsilon=1e-6):
@@ -81,12 +85,8 @@ def test():
   num_heads = 8
   drop = 0.5
 
-  #initialize layers
-  attn_layer = attention.init_attention(prng_key, batch_size, sequence_length, d_model)
-  mlp_layer = mlp.init_mlp(prng_key, d_model, d_ff)
-
   #initialize block
-  block = init_block(attn_layer, mlp_layer)
+  block = init_block(prng_key, batch_size, sequence_length, d_model, d_ff)
 
   #initialize seq
   initializer = jax.nn.initializers.normal(0.01)

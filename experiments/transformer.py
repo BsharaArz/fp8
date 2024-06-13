@@ -10,9 +10,10 @@ import mlp
 class Transformer(NamedTuple):
     blocks: list
 
-def init_transformer(block: transformer_block.TransformerBlock, num_blocks: int):
+def init_transformer(prng_key, batch_size, sequence_length, d_model, d_ff, num_blocks: int):
     #create a list of blocks of length num_blocks
-    return Transformer([block for _ in range(num_blocks)])
+    blocks = [transformer_block.init_block(prng_key, batch_size, sequence_length, d_model, d_ff) for _ in range(num_blocks)]
+    return Transformer(blocks)
 
 def transformer_forward(model: Transformer, seq: jax.Array, num_heads, drop, prng_key):
     '''
@@ -35,15 +36,8 @@ def test():
     drop = 0.5
     num_blocks = 12
 
-    #initialize mlp/attention layers
-    attn_layer = attention.init_attention(prng_key, batch_size, sequence_length, d_model)
-    mlp_layer = mlp.init_mlp(prng_key, d_model, d_ff)
-
-    #initialize block
-    block = transformer_block.init_block(attn_layer, mlp_layer)
-
     #initialize transformer
-    transform = init_transformer(block, num_blocks)
+    transform = init_transformer(prng_key, batch_size, sequence_length, d_model, d_ff, num_blocks)
 
     #initialize seq
     initializer = jax.nn.initializers.normal(0.01)
