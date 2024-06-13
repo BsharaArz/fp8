@@ -11,8 +11,9 @@ class TransformerBlock(NamedTuple):
 
 def init_block(prng_key, batch_size, sequence_length, d_model, d_ff):
   #initialize mlp/attention layers
-  attn_layer = attention.init_attention(prng_key, batch_size, sequence_length, d_model)
-  mlp_layer = mlp.init_mlp(prng_key, d_model, d_ff)
+  key0, key1 = jax.random.split(prng_key)
+  attn_layer = attention.init_attention(key0, batch_size, sequence_length, d_model)
+  mlp_layer = mlp.init_mlp(key1, d_model, d_ff)
 
   return TransformerBlock(attn_layer, mlp_layer)
 

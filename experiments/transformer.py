@@ -12,7 +12,8 @@ class Transformer(NamedTuple):
 
 def init_transformer(prng_key, batch_size, sequence_length, d_model, d_ff, num_blocks: int):
     #create a list of blocks of length num_blocks
-    blocks = [transformer_block.init_block(prng_key, batch_size, sequence_length, d_model, d_ff) for _ in range(num_blocks)]
+    keys = jax.random.split(prng_key, num_blocks)
+    blocks = [transformer_block.init_block(keys[i], batch_size, sequence_length, d_model, d_ff) for i in range(num_blocks)]
     return Transformer(blocks)
 
 def transformer_forward(model: Transformer, seq: jax.Array, num_heads, drop, prng_key):
