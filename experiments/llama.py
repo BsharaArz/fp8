@@ -30,7 +30,7 @@ def forward_llama(model: Llama, seq, num_heads, drop, prng_key):
     logits = transformer.transformer_forward(model.tran, embedded, num_heads, drop, prng_key)
 
     #logits weights
-    output = logits_weights.logits_weights_lookup(model.log_weights, seq)
+    output = logits_weights.logits_weights_lookup(model.log_weights, logits)
     return output
 
 def test():
