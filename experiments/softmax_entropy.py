@@ -25,12 +25,12 @@ def test():
   #create logits, labels
   prng_key = jax.random.PRNGKey(0)
   initializer = jax.nn.initializers.normal(0.01)
-  logits = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
-  labels = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
+  logits = initializer(prng_key, (batch_size, sequence_length, ), jnp.float32)
+  labels = initializer(prng_key, (batch_size, sequence_length), jnp.float32)
 
   #calculate softmax + cross entropy
   output = softmax_cross_entropy(logits, labels)
-  print(output)
+  print(output.mean())
 
   #check that shape = (batch_size, sequence_length)
   print(output.shape)
