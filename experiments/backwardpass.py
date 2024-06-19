@@ -48,6 +48,6 @@ def test():
 
 def main():
   test()
-
+'''
 if name == "main":
-  main()
+  main()'''

@@ -1,5 +1,5 @@
 import jax
-import jax.numpy as jnp
+from jax import numpy as jnp
 from typing_extensions import NamedTuple
 
 import transformer
@@ -54,13 +54,8 @@ def test():
     #forward llama
     output = forward_llama(llama, seq, num_heads, drop, prng_key)
 
-    print(seq)
-    print(output)
-    print(seq.shape)
-    print(output.shape)
-
 def main():
     test()
-
+'''
 if name == 'main':
-    main()
+    main()'''

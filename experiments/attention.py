@@ -9,10 +9,12 @@ class Attention(NamedTuple):
 
 def init_attention(prng_key: jax.Array, batch_size: int, sequence_length: int, d_model: int):
   #initialize qkv
-  initializer = jax.nn.initializers.normal(0.01)
-  q = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
-  k = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
-  v = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
+  cpu_0 = jax.devices('cpu')[0]
+  with jax.default_device(cpu_0):
+    initializer = jax.nn.initializers.normal(0.01)
+    q = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
+    k = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
+    v = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
 
   return Attention(q, k, v)
 
@@ -38,9 +40,9 @@ def multi_head_attention(q, k, v, num_heads):
   batch_size, seq_length, d_model = q.shape
 
   #reshape qkv based on num_heads
-  q = q.reshape(batch_size, seq_length, num_heads, -1) #(batch_size, seq_length, num_heads, d_head)
-  k = k.reshape(batch_size, seq_length, num_heads, -1)
-  v = v.reshape(batch_size, seq_length, num_heads, -1)
+  q = q.reshape(batch_size, seq_length, num_heads, d_model//num_heads) #(batch_size, seq_length, num_heads, d_head)
+  k = k.reshape(batch_size, seq_length, num_heads, d_model//num_heads)
+  v = v.reshape(batch_size, seq_length, num_heads, d_model//num_heads)
 
   q = q.transpose(0, 2, 1, 3)
   k = k.transpose(0, 2, 1, 3)
@@ -73,6 +75,6 @@ def test():
 
 def main():
   test()
-
+'''
 if name == "main":
-  main()
+  main()'''

@@ -15,8 +15,10 @@ def init_mlp(prng_key: jax.Array, d_model: int, d_ff: int):
   initialize the parameters and return an instance of MLP
   '''
   #initialize layers
-  initializer = jax.nn.initializers.normal(0.01)
-  layers = [[initializer(prng_key, (d_model,d_ff)), initializer(prng_key, (d_ff,))], [initializer(prng_key, (d_ff, d_model)), initializer(prng_key, (d_model,))]]
+  cpu_0 = jax.devices('cpu')[0]
+  with jax.default_device(cpu_0):
+    initializer = jax.nn.initializers.normal(0.01)
+    layers = [[initializer(prng_key, (d_model,d_ff)), initializer(prng_key, (d_ff,))], [initializer(prng_key, (d_ff, d_model)), initializer(prng_key, (d_model,))]]
 
   #return instance
   return MLP(layers)
@@ -33,6 +35,6 @@ def forward_mlp(params: MLP, seq: jax.Array):
     activations = jax.nn.relu(jnp.dot(activations, w) + b)
 
   return activations
-
+'''
 if name == "main":
-  main()
+  main()'''

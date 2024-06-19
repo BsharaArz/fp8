@@ -1,15 +1,20 @@
 import tokenizer
+import jax
 
 def process_file(file_name):
   #open file
+  print("open") #tracker
   with open(file_name, 'r') as file:
     file = file.readlines()
 
-  #flatten file
+  print("flattening") #tracker
   file_tokenized = []
+
+  #flatten file
   for x in file:
     file_tokenized.extend(tokenizer.tokenize(x))
-  
+    
+  print("done") #tracker
   return file_tokenized
 
 def create_batches(file_tokenized, batch_size, sequence_length):
@@ -34,6 +39,6 @@ def test():
 
 def main():
   test()
-
+'''
 if name == "main":
-  main()
+  main()'''

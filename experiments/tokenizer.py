@@ -1,6 +1,7 @@
 #Using Albert (sentence piece tokenizer)
 
 from transformers import AlbertTokenizer
+import jax
 tokenizer = AlbertTokenizer.from_pretrained('albert-base-v2')
 
 def tokenize(x):
@@ -12,6 +13,6 @@ def test():
 
 def main():
   test()
-
+'''
 if name == "main":
-  main()
+  main()'''

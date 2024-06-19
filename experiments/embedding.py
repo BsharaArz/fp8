@@ -7,8 +7,10 @@ class Embedding(NamedTuple):
 
 def create_table(prng_key: jax.Array, d_model: int, vocab_size: int):
   #create table
-  initializer = jax.nn.initializers.normal(0.01)
-  table = initializer(prng_key, (vocab_size, d_model), jnp.float32)
+  cpu_0 = jax.devices('cpu')[0]
+  with jax.default_device(cpu_0):
+    initializer = jax.nn.initializers.normal(0.01)
+    table = initializer(prng_key, (vocab_size, d_model), jnp.float32)
   return Embedding(table)
 
 '''
@@ -45,6 +47,6 @@ def test():
 
 def main():
   test()
-
+'''
 if name == "main":
-  main()
+  main()'''

@@ -41,8 +41,6 @@ def dropout(seq, drop, prng_key):
   dropout function given a seq and dropout rate
   '''
   #compute dropout
-  assert 0 <= drop <= 1
-  if drop == 1: return jnp.zeros_like(seq)
   mask = jax.random.uniform(prng_key, seq.shape) > drop
   return jnp.asarray(mask, jnp.float32) * seq / (1.0 - drop)
 
@@ -51,6 +49,7 @@ def block_forward(params: TransformerBlock, seq:jax.Array, num_heads, drop, prng
   conduct a forward pass for a singular transformer block
   '''
   #layer norm
+  
   seq = normalize(seq)
 
   #forward attention
@@ -92,6 +91,8 @@ def test():
   #initialize seq
   initializer = jax.nn.initializers.normal(0.01)
   seq = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
+  print("seq created")
+  print(seq)
 
   output = block_forward(block, seq, num_heads, drop, prng_key)
 
@@ -101,5 +102,6 @@ def test():
 def main():
   test()
 
+'''
 if name == "main":
-  main()
+  main()'''
