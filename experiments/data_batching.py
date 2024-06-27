@@ -12,7 +12,7 @@ def process_file(file_name):
   file_tokenized = []
 
   #flatten file
-  for x in tqdm(file[:len(file)//10]):
+  for x in tqdm(file):
     file_tokenized.extend(tokenizer.tokenize(x))
     
   print("done") #tracker
