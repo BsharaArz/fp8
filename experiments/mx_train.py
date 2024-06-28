@@ -38,15 +38,17 @@ def test():
     seq = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
     seq2 = jax.random.randint(prng_key, (batch_size, sequence_length), 0, d_model)
     print("FP32 loss:")
-    print(forward(fp32_llama, seq, 0, drop, prng_key, seq2))
-    print(fwd_bwd(fp32_llama, seq, 0, drop, prng_key, seq2).tran.blocks[0])
+    print(forward(fp32_llama, seq, num_heads, 0, prng_key, seq2))
+    #print(fwd_bwd(fp32_llama, seq, num_heads, 0, prng_key, seq2).tran.blocks[0])
 
     print("FP8 loss:")
     print(forward(fp8_llama, seq, num_heads, drop, prng_key, seq2))
-    print(fwd_bwd(fp8_llama, seq, num_heads, drop, prng_key, seq2).tran.blocks[0])
+    #print(fwd_bwd(fp8_llama, seq, num_heads, drop, prng_key, seq2).tran.blocks[0])
 
 def main():
     test()
 
-if name == "main":
-    main()
+test()
+
+# if name == "main":
+#     main()

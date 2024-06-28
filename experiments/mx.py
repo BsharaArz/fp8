@@ -43,6 +43,14 @@ def mx_matmul(mx1: MX, mx2: MX):
     result = result * mx2.scalar if mx2.scalar != 0 else result
     return result.astype(jnp.float32)
 
+def mx_multiply(mx1: MX, mx2: MX):
+    result = jnp.multiply(mx1.seq, mx2.seq)
+    result = result * mx1.scalar if mx1.scalar != 0 else result
+    result = result * mx2.scalar if mx2.scalar != 0 else result
+    return result.astype(jnp.float32)
+
+def mx_update(mx1: MX, newSeq: jax.Array): #update seq w/o changing scalar (transpose, reshape, etc.)
+    return MX(newSeq, mx1.scalar)
 
 def test():
     #initialize params
@@ -63,5 +71,5 @@ def test():
 def main():
     test() 
 
-if name == "main":
-    main()
+# if name == "main":
+#     main()

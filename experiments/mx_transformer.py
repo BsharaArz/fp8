@@ -2,6 +2,8 @@ import jax
 import transformer
 import mlp
 import mx_transformer_block
+import transformer_block
+import attention
 
 #init transformer with MX blocks, forward + abstraction remains the same
 
@@ -18,9 +20,24 @@ def transformer_forward(model: transformer.Transformer, seq: jax.Array, num_head
     '''
     #instead using simple loop
     for block in model.blocks:
-        if num_heads == 0: #indicator of fp32 - doing just for testing
-            l = mlp.forward_mlp(block.mlp_layer, seq)
-            seq = seq+l
+        if drop == 0: #indicator of fp32 - doing just for testing
+            #layer norm
+            seq = transformer_block.normalize(seq)
+
+            #forward attention
+            attn = attention.forward_attention(block.attn_layer, seq, num_heads)
+
+            #residual connection
+            seq = seq + attn
+
+            #layer norm
+            seq = transformer_block.normalize(seq)
+
+            #forward mlp
+            logits = mlp.forward_mlp(block.mlp_layer, seq)
+
+            #residual connection
+            seq = seq + logits
         else:
             seq = mx_transformer_block.block_forward(block, seq, num_heads, drop, prng_key)
     return seq

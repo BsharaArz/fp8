@@ -25,7 +25,7 @@ def forward_attention(params: Attention, seq: jax.Array, num_heads: int):
   v = seq * params.v
   return multi_head_attention(q, k, v, num_heads)
 
-def scaled_dot_product(q, k, v):
+def scaled_dot_product(q: jax.Array, k: jax.Array, v: jax.Array):
   '''
   Attention Calculation
   attention = softmax[ (QK^T)/sqrt(dk) ] * V
@@ -34,9 +34,9 @@ def scaled_dot_product(q, k, v):
   logits = jnp.matmul(q, jnp.swapaxes(k, -2, -1)) / jnp.sqrt(dk)
   weights = jax.nn.softmax(logits)
   output = jnp.matmul(weights, v)
-  return output, weights
+  return output
 
-def multi_head_attention(q, k, v, num_heads):
+def multi_head_attention(q: jax.Array, k: jax.Array, v: jax.Array, num_heads: int):
   '''
   q, k, v given with shape (batch_size, seq_length, d_model)
   '''
@@ -52,11 +52,11 @@ def multi_head_attention(q, k, v, num_heads):
   v = v.transpose(0, 2, 1, 3)
 
   #calc dot product of qkv and reshape
-  values, attention = scaled_dot_product(q, k, v)
+  values = scaled_dot_product(q, k, v)
   values = values.transpose(0, 2, 1, 3)
   values = values.reshape(batch_size, seq_length, d_model) # return to norm
 
-  return values, attention
+  return values
 
 def test():
   #initialize params
