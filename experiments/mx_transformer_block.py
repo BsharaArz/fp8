@@ -3,6 +3,7 @@ import jax.numpy as jnp
 from typing_extensions import NamedTuple
 
 import attention
+import mx_attention
 import mlp
 import mx_mlp
 import mx
@@ -22,7 +23,17 @@ def init_block(prng_key, batch_size, sequence_length, d_model, d_ff):
   return TransformerBlock(attn_layer, mlp_layer)
 
 # LAYERNORM in fp32
-# dropout (???)
+
+def dropout(seq, drop, prng_key):
+  '''
+  dropout function given a seq and dropout rate
+  '''
+  #compute dropout
+  mask = jax.random.uniform(prng_key, seq.shape) > drop
+  #quantize arrays
+  mask = mx.quantize(jnp.asarray(mask, jnp.float32), jnp.float8_e4m3fn)
+  seq = mx.quantize(seq, jnp.float8_e4m3fn)
+  return mx.mx_multiply(mask, seq) / (1.0 - drop)
 
 def block_forward(params: TransformerBlock, seq:jax.Array, num_heads, drop, prng_key):
   '''
@@ -31,8 +42,14 @@ def block_forward(params: TransformerBlock, seq:jax.Array, num_heads, drop, prng
   #layer norm
   seq = transformer_block.normalize(seq)
 
+  #quantize seq
+  mx_seq = mx.quantize(seq, jnp.float8_e4m3fn)
+
   #forward attention
-  attn = attention.forward_attention(params.attn_layer, seq, num_heads) #return fp32
+  attn = mx_attention.forward_attention(params.attn_layer, mx_seq, num_heads) #return fp32
+
+  #dropout
+  attn = dropout(attn, drop, prng_key)
 
   #residual connection
   seq = seq + attn
@@ -41,10 +58,13 @@ def block_forward(params: TransformerBlock, seq:jax.Array, num_heads, drop, prng
   seq = transformer_block.normalize(seq)
 
   #quantize seq
-  seq2 = mx.quantize(seq, jnp.float8_e4m3fn)
+  mx_seq = mx.quantize(seq, jnp.float8_e4m3fn)
 
   #forward mlp
-  logits = mx_mlp.forward_mlp(params.mlp_layer, seq2) #return fp32
+  logits = mx_mlp.forward_mlp(params.mlp_layer, mx_seq) #return fp32
+
+  #dropout
+  attn = dropout(attn, drop, prng_key)
 
   #residual connection
   seq = seq + logits

@@ -4,7 +4,7 @@ import jax.numpy as jnp
 import attention
 import mx
 
-def forward_attention(params: attention.Attention, seq: mx.Mx, num_heads: int):
+def forward_attention(params: attention.Attention, seq: mx.MX, num_heads: int):
   '''
   params: qkv in fp32
   seq: input seq in fp8 mx format
