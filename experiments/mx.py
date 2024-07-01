@@ -18,36 +18,52 @@ def calc_scalar(seq: jax.Array, dt):
     #clip x
     x = jnp.clip(x, min=jnp.iinfo(jnp.int8).min, max=jnp.iinfo(jnp.int8).max)
     return x.astype(jnp.int8)
-    
+ 
 def quantize(seq: jax.Array, dt):
-    '''s
+    '''
     Params: seq in fp32 and dtype (either jnp.float8_e4m3fn or jnp.float8_e5m2)
     '''
     #calc scalar and scaled seq
     x = calc_scalar(seq, dt)
-    if x == 0: #seq uses less exp than fp8 (no scale needed)
-        return MX(seq.astype(dt), x)
+    return jax.lax.cond(x == 0, no_scale, scale, *(seq, x))
+
+#-------------------------------------------
+# condition funcs for jax.lax.cond
+def no_scale(seq: jax.Array, x):
+    return MX(seq.astype(jnp.float8_e4m3fn), x)
+
+def scale(seq: jax.Array, x):
     seq = seq/x
     
     #clip seq
-    seq = jnp.clip(seq, min=(jnp.finfo(dt).min).astype(jnp.float32), max=(jnp.finfo(dt).max).astype(jnp.float32))
+    seq = jnp.clip(seq, min=(jnp.finfo(jnp.float8_e4m3fn).min).astype(jnp.float32), max=(jnp.finfo(jnp.float8_e4m3fn).max).astype(jnp.float32))
     
     #rewrite in dtype
-    seq = seq.astype(dt)
+    seq = seq.astype(jnp.float8_e4m3fn)
     
     return MX(seq, x)
+#-------------------------------------------
 
 def mx_matmul(mx1: MX, mx2: MX):
     result = jnp.matmul(mx1.seq, mx2.seq)
-    result = result * mx1.scalar if mx1.scalar != 0 else result
-    result = result * mx2.scalar if mx2.scalar != 0 else result
+    result = jax.lax.cond(mx1.scalar == 0, no_change, apply_scale, *(result, mx1.scalar))
+    result = jax.lax.cond(mx2.scalar == 0, no_change, apply_scale, *(result, mx2.scalar))
     return result.astype(jnp.float32)
 
 def mx_multiply(mx1: MX, mx2: MX):
     result = jnp.multiply(mx1.seq, mx2.seq)
-    result = result * mx1.scalar if mx1.scalar != 0 else result
-    result = result * mx2.scalar if mx2.scalar != 0 else result
+    result = jax.lax.cond(mx1.scalar == 0, no_change, apply_scale, *(result, mx1.scalar))
+    result = jax.lax.cond(mx2.scalar == 0, no_change, apply_scale, *(result, mx2.scalar))
     return result.astype(jnp.float32)
+
+#-------------------------------------------
+# condition funcs for jax.lax.cond
+def no_change(result, scalar):
+    return result
+
+def apply_scale(result, scalar):
+    return result * scalar
+#-------------------------------------------
 
 def mx_update(mx1: MX, newSeq: jax.Array): #update seq w/o changing scalar (transpose, reshape, etc.)
     return MX(newSeq, mx1.scalar)
