@@ -20,24 +20,5 @@ def transformer_forward(model: transformer.Transformer, seq: jax.Array, num_head
     '''
     #instead using simple loop
     for block in model.blocks:
-        if drop == 0: #indicator of fp32 - doing just for testing
-            #layer norm
-            seq = transformer_block.normalize(seq)
-
-            #forward attention
-            attn = attention.forward_attention(block.attn_layer, seq, num_heads)
-
-            #residual connection
-            seq = seq + attn
-
-            #layer norm
-            seq = transformer_block.normalize(seq)
-
-            #forward mlp
-            logits = mlp.forward_mlp(block.mlp_layer, seq)
-
-            #residual connection
-            seq = seq + logits
-        else:
-            seq = mx_transformer_block.block_forward(block, seq, num_heads, drop, prng_key)
+        seq = mx_transformer_block.block_forward(block, seq, num_heads, drop, prng_key)
     return seq

@@ -4,7 +4,7 @@ import jax
 import functools
 import mx_llama
 import jax.numpy as jnp
-
+import train
 #forward pass
 #@functools.partial(jax.jit, static_argnames=['num_heads']) 
 def forward(llam, seq, num_heads, drop, prng_key, label):
@@ -31,14 +31,16 @@ def test():
 
 
     fp32_llama = llama.init_llama(prng_key, batch_size, sequence_length, d_model, d_ff, num_blocks, vocab_size)
-    fp8_llama = mx_llama.init_llama(prng_key, batch_size, sequence_length, d_model, d_ff, num_blocks, vocab_size)
+    fp8_llama = llama.init_llama(prng_key, batch_size, sequence_length, d_model, d_ff, num_blocks, vocab_size)
 
     #initialize seq
     initializer = jax.nn.initializers.normal(0.01)
-    seq = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
-    seq2 = jax.random.randint(prng_key, (batch_size, sequence_length), 0, d_model)
+    key1, key2 = jax.random.split(prng_key)
+    seq = jax.random.randint(key1, (batch_size, sequence_length), 0, vocab_size)
+    seq2 = jax.random.randint(key2, (batch_size, sequence_length), 0, vocab_size)
+    
     print("FP32 loss:")
-    print(forward(fp32_llama, seq, num_heads, 0, prng_key, seq2))
+    print(train.forward(fp32_llama, seq, num_heads, drop, prng_key, seq2))
     #print(fwd_bwd(fp32_llama, seq, num_heads, 0, prng_key, seq2).tran.blocks[0])
 
     print("FP8 loss:")

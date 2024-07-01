@@ -12,8 +12,8 @@ def forward_attention(params: attention.Attention, seq: mx.MX, num_heads: int):
   #conduct multi head attention
   #convert qkv to mx -> multiply in fp8 -> save as mx
   q = mx.quantize(mx.mx_multiply(seq, mx.quantize(params.q, jnp.float8_e4m3fn)), jnp.float8_e4m3fn)
-  k = mx.quantize(mx.mx_multiply(seq, mx.quantize(params.q, jnp.float8_e4m3fn)), jnp.float8_e4m3fn)
-  v = mx.quantize(mx.mx_multiply(seq, mx.quantize(params.q, jnp.float8_e4m3fn)), jnp.float8_e4m3fn)
+  k = mx.quantize(mx.mx_multiply(seq, mx.quantize(params.k, jnp.float8_e4m3fn)), jnp.float8_e4m3fn)
+  v = mx.quantize(mx.mx_multiply(seq, mx.quantize(params.v, jnp.float8_e4m3fn)), jnp.float8_e4m3fn)
   return multi_head_attention(q, k, v, num_heads) #returns as fp8 mx format
 
 def scaled_dot_product(q: mx.MX, k: mx.MX, v: mx.MX):

@@ -10,7 +10,7 @@ from matplotlib.pylab import plt
 from tqdm import tqdm
 
 #forward pass
-@functools.partial(jax.jit, static_argnames=['num_heads']) 
+#@functools.partial(jax.jit, static_argnames=['num_heads']) 
 def forward(llam, seq, num_heads, drop, prng_key, label):
   logits = llama.forward_llama(llam, seq, num_heads, drop, prng_key) # logits (batch, sequence_len, d_vocab)
   loss = optax.losses.softmax_cross_entropy_with_integer_labels(logits, label)
@@ -115,7 +115,7 @@ def test():
 
 def main():
     test()
-main()
+
 '''
 if name == "main":
     main()'''
