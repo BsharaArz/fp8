@@ -7,14 +7,14 @@ import mlp
 
 #MLP object/init same as fp32 (on mlp.py)
 
-def forward_mlp(params: mlp.MLP, seq: mx.MX):
+def forward_mlp(params: mlp.MLP, seq: jax.Array):
   '''
   seq is Sequence - input to the MLP block - MX FORMAT
   seq is of shape (batch_size, sequence_length, d_model
   Do the necessary matrix multiplications and return the transformer sequence
   '''
   #wx+b computations
-  activations = seq
+  activations = mx.quantize(seq, jnp.float8_e4m3fn)
   for w, b in params.layers[:-1]:
     activations = mx.quantize(jax.nn.relu(mx.mx_matmul(activations, mx.quantize(w, jnp.float8_e4m3fn)) + b), jnp.float8_e4m3fn)
 

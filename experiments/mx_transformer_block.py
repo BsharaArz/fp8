@@ -8,6 +8,7 @@ import mlp
 import mx_mlp
 import mx
 import transformer_block
+import functools
 
 #JUST MLP FOR NOW
 class TransformerBlock(NamedTuple):
@@ -35,6 +36,7 @@ def dropout(seq, drop, prng_key):
   seq = mx.quantize(seq, jnp.float8_e4m3fn)
   return mx.mx_multiply(mask, seq) / (1.0 - drop)
 
+# @functools.partial(jax.checkpoint, policy=jax.checkpoint_policies.dots_with_no_batch_dims_saveable)
 def block_forward(params: TransformerBlock, seq:jax.Array, num_heads, drop, prng_key):
   '''
   conduct a forward pass for a singular transformer block
@@ -42,11 +44,8 @@ def block_forward(params: TransformerBlock, seq:jax.Array, num_heads, drop, prng
   #layer norm
   seq = transformer_block.normalize(seq)
 
-  #quantize seq
-  mx_seq = mx.quantize(seq, jnp.float8_e4m3fn)
-
   #forward attention
-  attn = mx_attention.forward_attention(params.attn_layer, mx_seq, num_heads) #return fp32
+  attn = mx_attention.forward_attention(params.attn_layer, seq, num_heads) #return fp32
 
   #dropout
   attn = dropout(attn, drop, prng_key)
@@ -57,14 +56,11 @@ def block_forward(params: TransformerBlock, seq:jax.Array, num_heads, drop, prng
   #layer norm
   seq = transformer_block.normalize(seq)
 
-  #quantize seq
-  mx_seq = mx.quantize(seq, jnp.float8_e4m3fn)
-
   #forward mlp
-  logits = mx_mlp.forward_mlp(params.mlp_layer, mx_seq) #return fp32
+  logits = mx_mlp.forward_mlp(params.mlp_layer, seq) #return fp32
 
   #dropout
-  attn = dropout(attn, drop, prng_key)
+  logits = dropout(logits, drop, prng_key)
 
   #residual connection
   seq = seq + logits

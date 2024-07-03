@@ -4,9 +4,10 @@ import jax
 import functools
 import mx_llama
 import jax.numpy as jnp
-import train
+#import train
+
 #forward pass
-@functools.partial(jax.jit, static_argnames=['num_heads']) 
+# @functools.partial(jax.jit, static_argnames=['num_heads']) 
 def forward(llam, seq, num_heads, drop, prng_key, label):
   logits = mx_llama.forward_llama(llam, seq, num_heads, drop, prng_key) # logits (batch, sequence_len, d_vocab)
   loss = optax.losses.softmax_cross_entropy_with_integer_labels(logits, label)
@@ -40,17 +41,16 @@ def test():
     seq2 = jax.random.randint(key2, (batch_size, sequence_length), 0, vocab_size)
 
     print("FP32 loss:")
-    print(train.forward(fp32_llama, seq, num_heads, drop, prng_key, seq2))
+    #print(train.forward(fp32_llama, seq, num_heads, drop, prng_key, seq2))
     #print(fwd_bwd(fp32_llama, seq, num_heads, 0, prng_key, seq2).tran.blocks[0])
 
     print("FP8 loss:")
     print(forward(fp8_llama, seq, num_heads, drop, prng_key, seq2))
-    #print(fwd_bwd(fp8_llama, seq, num_heads, drop, prng_key, seq2).tran.blocks[0])
-
+    print(fwd_bwd(fp8_llama, seq, num_heads, drop, prng_key, seq2).tran.blocks[0])
 def main():
     test()
 
-test()
+#test()
 
 # if name == "main":
 #     main()
