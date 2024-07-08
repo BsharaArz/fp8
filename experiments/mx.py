@@ -89,14 +89,15 @@ def test():
 
     #initialize seq
     initializer = jax.nn.initializers.normal(0.01)
-    seq = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
+    seq = initializer(prng_key, (batch_size, sequence_length), jnp.float32)
     quantized_seq = quantize(seq, jnp.float8_e4m3fn)
-    print(jnp.matmul(seq, seq.swapaxes(-2, -1))[0][0])
+
+    print(jnp.matmul(seq, seq.swapaxes(-2, -1))[0])
     transposed = MX(quantized_seq.seq.swapaxes(-2, -1), quantized_seq.scalar)
-    print(mx_matmul(quantized_seq, transposed)[0][0])
+    print(mx_matmul(quantized_seq, transposed)[0])
 
 def main():
     test() 
 
-# if name == "main":
-#     main()
+if __name__ == "__main__":
+    main()

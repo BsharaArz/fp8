@@ -10,18 +10,7 @@ import mx
 import transformer_block
 import functools
 
-#JUST MLP FOR NOW
-class TransformerBlock(NamedTuple):
-  attn_layer: attention.Attention
-  mlp_layer: mlp.MLP
-
-def init_block(prng_key, batch_size, sequence_length, d_model, d_ff):
-  #initialize mlp
-  key0, key1 = jax.random.split(prng_key)
-  attn_layer = attention.init_attention(key0, batch_size, sequence_length, d_model)
-  mlp_layer = mlp.init_mlp(key1, d_model, d_ff)
-
-  return TransformerBlock(attn_layer, mlp_layer)
+# abstraction + init from transformer_block
 
 # LAYERNORM in fp32
 
@@ -37,7 +26,7 @@ def dropout(seq, drop, prng_key):
   return mx.mx_multiply(mask, seq) / (1.0 - drop)
 
 # @functools.partial(jax.checkpoint, policy=jax.checkpoint_policies.dots_with_no_batch_dims_saveable)
-def block_forward(params: TransformerBlock, seq:jax.Array, num_heads, drop, prng_key):
+def block_forward(params: transformer_block.TransformerBlock, seq:jax.Array, num_heads, drop, prng_key):
   '''
   conduct a forward pass for a singular transformer block
   '''
@@ -97,5 +86,5 @@ def main():
   test()
 
 
-# if name == "main":
-#   main()
+if __name__ == "__main__":
+    main()

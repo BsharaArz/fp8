@@ -13,22 +13,22 @@ import mx
 
 #forward pass
 @functools.partial(jax.jit, static_argnames=['num_heads']) 
-def forward(llam, seq, num_heads, drop, prng_key, label, quantized_llama):
+def forward(llam, seq, num_heads, drop, prng_key, label):
   #FP32: (testing)
 #  logits = llama.forward_llama(llam, seq, num_heads, drop, prng_key) # logits (batch, sequence_len, d_vocab)
-  #FP8
+  #FP8s
   logits = mx_llama.forward_llama(llam, seq, num_heads, drop, prng_key)
   loss = optax.losses.softmax_cross_entropy_with_integer_labels(logits, label)
   return loss.mean()
 
 #fwd-bwd grad
-fwd_bwd = jax.grad(forward, argnums=0, allow_int=True)
+fwd_bwd = jax.grad(forward, argnums=0)
 
 #training step 
-#@functools.partial(jax.jit, static_argnames=['optimizer', 'num_heads']) 
+@functools.partial(jax.jit, static_argnames=['optimizer', 'num_heads']) 
 def step_fn(llam, optimizer, opt_state, seq, num_heads, drop, prng_key, label):
-    grad = fwd_bwd(llam, seq, num_heads, drop, prng_key, label, None)
-    print(grad) #testing
+    grad = fwd_bwd(llam, seq, num_heads, drop, prng_key, label)
+    # print(grad) #testing
     updates, opt_state = optimizer.update(grad, opt_state, llam)
     llam = optax.apply_updates(llam, updates)
     return llam, opt_state
@@ -58,7 +58,7 @@ def train(prng_key, batch_size, sequence_length, d_model, d_ff, num_blocks, voca
             if step == 6000:
                 break
             #calculate loss
-            loss = forward(llam, jnp.array(seq), num_heads, drop, prng_key, jnp.array(label), mx_llama.quantize_llama(llam))
+            loss = forward(llam, jnp.array(seq), num_heads, drop, prng_key, jnp.array(label))
             #store loss
             train_loss_dict[step] = loss
             #optimizer
@@ -109,7 +109,7 @@ def test():
     learning_rate = 0.001
     num_heads = 8
     num_blocks = 12 #from paper
-    drop = 0.5
+    drop = 0.1
     train_file_name = "experiments/data/TinyStories-train.txt"
     valid_file_name = "experiments/data/TinyStories-valid.txt"
 
@@ -121,7 +121,7 @@ def test():
 
 def main():
     test()
-test()
-'''
-if name == "main":
-    main()'''
+# test()
+
+if __name__ == "__main__":
+    main()
