@@ -21,8 +21,8 @@ def dropout(seq, drop, prng_key):
   #compute dropout
   mask = jax.random.uniform(prng_key, seq.shape) > drop
   #quantize arrays
-  mask = mx.quantize(jnp.asarray(mask, jnp.float32), jnp.float8_e4m3fn)
-  seq = mx.quantize(seq, jnp.float8_e4m3fn)
+  mask = mx.quantize(jnp.asarray(mask, jnp.float32))
+  seq = mx.quantize(seq)
   return mx.mx_multiply(mask, seq) / (1.0 - drop)
 
 # @functools.partial(jax.checkpoint, policy=jax.checkpoint_policies.dots_with_no_batch_dims_saveable)
@@ -84,7 +84,6 @@ def test():
 
 def main():
   test()
-
 
 if __name__ == "__main__":
     main()

@@ -11,24 +11,25 @@ from tqdm import tqdm
 import mx_llama
 import mx
 
+
 #forward pass
 @functools.partial(jax.jit, static_argnames=['num_heads']) 
 def forward(llam, seq, num_heads, drop, prng_key, label):
   #FP32: (testing)
-#  logits = llama.forward_llama(llam, seq, num_heads, drop, prng_key) # logits (batch, sequence_len, d_vocab)
+#   logits = llama.forward_llama(llam, seq, num_heads, drop, prng_key) # logits (batch, sequence_len, d_vocab)
   #FP8s
-  logits = mx_llama.forward_llama(llam, seq, num_heads, drop, prng_key)
+  logits = mx_llama.forward_llama(llam, seq, num_heads, drop, prng_key).astype(jnp.float32)
   loss = optax.losses.softmax_cross_entropy_with_integer_labels(logits, label)
   return loss.mean()
 
 #fwd-bwd grad
-fwd_bwd = jax.grad(forward, argnums=0)
+fwd_bwd = jax.grad(forward, argnums=0, allow_int=True)
 
 #training step 
-@functools.partial(jax.jit, static_argnames=['optimizer', 'num_heads']) 
+# @functools.partial(jax.jit, static_argnames=['optimizer', 'num_heads']) 
 def step_fn(llam, optimizer, opt_state, seq, num_heads, drop, prng_key, label):
     grad = fwd_bwd(llam, seq, num_heads, drop, prng_key, label)
-    # print(grad) #testing
+    print(grad) #testing
     updates, opt_state = optimizer.update(grad, opt_state, llam)
     llam = optax.apply_updates(llam, updates)
     return llam, opt_state
@@ -57,7 +58,6 @@ def train(prng_key, batch_size, sequence_length, d_model, d_ff, num_blocks, voca
         for seq, label in tqdm(batches):
             if step == 6000:
                 break
-            #calculate loss
             loss = forward(llam, jnp.array(seq), num_heads, drop, prng_key, jnp.array(label))
             #store loss
             train_loss_dict[step] = loss

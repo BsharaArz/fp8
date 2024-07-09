@@ -10,15 +10,15 @@ def forward_attention(params: attention.Attention, seq: jax.Array, num_heads):
   seq: input seq in fp8 mx format
   '''
   #quantize seq
-  seq = mx.quantize(seq, jnp.float8_e4m3fn)
+  seq = mx.quantize(seq)
   #conduct multi head attention
   #convert qkv to mx -> multiply in fp8 -> save as mx
-  q = mx.mx_multiply(seq, mx.quantize(params.q, jnp.float8_e4m3fn))
-  k = mx.mx_multiply(seq, mx.quantize(params.k, jnp.float8_e4m3fn))
-  v = mx.mx_multiply(seq, mx.quantize(params.v, jnp.float8_e4m3fn))
-  q = mx.quantize(q, jnp.float8_e4m3fn)
-  k = mx.quantize(k, jnp.float8_e4m3fn)
-  v = mx.quantize(v, jnp.float8_e4m3fn)
+  q = mx.mx_multiply(seq, mx.quantize(params.q))
+  k = mx.mx_multiply(seq, mx.quantize(params.k))
+  v = mx.mx_multiply(seq, mx.quantize(params.v))
+  q = mx.quantize(q)
+  k = mx.quantize(k)
+  v = mx.quantize(v)
   return multi_head_attention(q, k, v, num_heads) #returns as fp8 mx format
 
 def scaled_dot_product(q: mx.MX, k: mx.MX, v: mx.MX):
@@ -30,8 +30,9 @@ def scaled_dot_product(q: mx.MX, k: mx.MX, v: mx.MX):
   k = mx.mx_update(k, k.seq.swapaxes(-2, -1))
   logits = mx.mx_matmul(q, k) / jnp.sqrt(dk)
   weights = jax.nn.softmax(logits)
-  weights = mx.quantize(weights, jnp.float8_e4m3fn)
-  output = mx.mx_matmul(weights, v)
+  with jax.named_scope("mx quantization/matmul"):
+    weights = mx.quantize(weights)
+    output = mx.mx_matmul(weights, v)
   return output
 
 def multi_head_attention(q: mx.MX, k: mx.MX, v: mx.MX, num_heads: int):

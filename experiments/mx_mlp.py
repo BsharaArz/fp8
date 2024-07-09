@@ -14,12 +14,12 @@ def forward_mlp(params: mlp.MLP, seq: jax.Array):
   Do the necessary matrix multiplications and return the transformer sequence
   '''
   #wx+b computations
-  activations = mx.quantize(seq, jnp.float8_e4m3fn)
+  activations = mx.quantize(seq)
   for w, b in params.layers[:-1]:
-    activations = mx.quantize(jax.nn.relu(mx.mx_matmul(activations, mx.quantize(w, jnp.float8_e4m3fn)) + b), jnp.float8_e4m3fn)
+    activations = mx.quantize(jax.nn.relu(mx.mx_matmul(activations, mx.quantize(w)) + b))
 
   w, b = params.layers[-1]
-  activations = jax.nn.relu(mx.mx_matmul(activations, mx.quantize(w, jnp.float8_e4m3fn)) + b)
+  activations = jax.nn.relu(mx.mx_matmul(activations, mx.quantize(w)) + b)
 
   return activations
 
