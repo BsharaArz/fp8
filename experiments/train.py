@@ -7,20 +7,29 @@ import data_batching
 from jax import numpy as jnp
 import functools
 from matplotlib.pylab import plt
+from tqdm import tqdm
+import mx_llama
+import mx
+
 
 #forward pass
+@functools.partial(jax.jit, static_argnames=['num_heads']) 
 def forward(llam, seq, num_heads, drop, prng_key, label):
-  logits = llama.forward_llama(llam, seq, num_heads, drop, prng_key) # logits (batch, sequence_len, d_vocab)
+  #FP32: (testing)
+#   logits = llama.forward_llama(llam, seq, num_heads, drop, prng_key) # logits (batch, sequence_len, d_vocab)
+  #FP8s
+  logits = mx_llama.forward_llama(llam, seq, num_heads, drop, prng_key).astype(jnp.float32)
   loss = optax.losses.softmax_cross_entropy_with_integer_labels(logits, label)
   return loss.mean()
 
 #fwd-bwd grad
-fwd_bwd = jax.grad(forward, argnums=0, allow_int = True)
+fwd_bwd = jax.grad(forward, argnums=0, allow_int=True)
 
 #training step 
-@functools.partial(jax.jit, static_argnames=['optimizer', 'num_heads']) 
+# @functools.partial(jax.jit, static_argnames=['optimizer', 'num_heads']) 
 def step_fn(llam, optimizer, opt_state, seq, num_heads, drop, prng_key, label):
     grad = fwd_bwd(llam, seq, num_heads, drop, prng_key, label)
+    print(grad) #testing
     updates, opt_state = optimizer.update(grad, opt_state, llam)
     llam = optax.apply_updates(llam, updates)
     return llam, opt_state
@@ -37,19 +46,18 @@ def train(prng_key, batch_size, sequence_length, d_model, d_ff, num_blocks, voca
     print("init llama")
     #initialize llama
     llam = llama.init_llama(prng_key, batch_size, sequence_length, d_model, d_ff, num_blocks, vocab_size)
-
+    
     #initialize optimizer
     print("init optim")
-    optimizer = optax.adamw(learning_rate)
+    optimizer = optax.chain(optax.clip_by_global_norm(1.0), optax.adamw(learning_rate, 0.9, 0.95))
     opt_state = optimizer.init(llam)
     step = 0
     for e in range(num_epochs):
         print(f"Epoch {e}")
-        for seq, label in data_batching.create_batches(tokenized_file, batch_size, sequence_length):
-            #stop after 3k steps (like in tinystories)
-            if step == 3000:
+        batches = data_batching.create_batches(tokenized_file, batch_size, sequence_length)
+        for seq, label in tqdm(batches):
+            if step == 6000:
                 break
-            #calculate loss
             loss = forward(llam, jnp.array(seq), num_heads, drop, prng_key, jnp.array(label))
             #store loss
             train_loss_dict[step] = loss
@@ -69,9 +77,6 @@ def validate(llam, valid_file_name, num_heads, drop, prng_key, batch_size, seque
     #steps    
     step = 0
     for seq, label in data_batching.create_batches(tokenized_file, batch_size, sequence_length):
-        #stop after 3k steps (like in tinystories)
-        if step == 3000:
-            break
         #calculate loss
         loss = forward(llam, jnp.array(seq), num_heads, drop, prng_key, jnp.array(label))
         #store loss
@@ -82,29 +87,29 @@ def validate(llam, valid_file_name, num_heads, drop, prng_key, batch_size, seque
 
 def plot_loss():
     #plot and label the training and validation loss values
-    plt.plot(train_loss_dict.keys, train_loss_dict.values, label='Training Loss')
-    plt.plot(val_loss_dict.keys, val_loss_dict.values, label='Validation Loss')
+    plt.plot(train_loss_dict.keys(), train_loss_dict.values(), label='Training Loss')
+    plt.plot(val_loss_dict.keys(), val_loss_dict.values(), label='Validation Loss')
     plt.title('Training and Validation Loss')
     plt.xlabel('Steps')
     plt.ylabel('Loss')
-    
+    plt.savefig('experiments/data/plot.png')
     #display
-    plt.legend(loc='best')
+    #plt.legend(loc='best')
     plt.show()
 
 def test():
     #params
     prng_key = jax.random.PRNGKey(0)
-    num_epochs = 10
-    d_model = 256
-    d_ff = 512
-    batch_size = 64
-    sequence_length = 32
+    num_epochs = 2
+    d_model = 128#256 #from paper
+    d_ff = 512 #from paper
+    batch_size = 32
+    sequence_length = 512 #from paper
     vocab_size = 30000
-    learning_rate = 0.00001
+    learning_rate = 0.001
     num_heads = 8
-    num_blocks = 12
-    drop = 0.5
+    num_blocks = 12 #from paper
+    drop = 0.1
     train_file_name = "experiments/data/TinyStories-train.txt"
     valid_file_name = "experiments/data/TinyStories-valid.txt"
 
@@ -116,7 +121,7 @@ def test():
 
 def main():
     test()
-main()
-'''
-if name == "main":
-    main()'''
+# test()
+
+if __name__ == "__main__":
+    main()

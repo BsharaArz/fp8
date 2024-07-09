@@ -9,7 +9,7 @@ import logits_weights
 class Llama(NamedTuple):
     tran: transformer.Transformer
     embed_weights: embedding.Embedding
-    log_weights: logits_weights.Logits_Weights
+    log_weights: logits_weights.LogitsWeights
 
 def init_llama(prng_key, batch_size, sequence_length, d_model, d_ff, num_blocks, vocab_size):
     #split keys
@@ -56,6 +56,6 @@ def test():
 
 def main():
     test()
-'''
-if name == 'main':
-    main()'''
+
+if __name__ == "__main__":
+    main()

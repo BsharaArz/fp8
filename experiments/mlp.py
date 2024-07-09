@@ -35,6 +35,6 @@ def forward_mlp(params: MLP, seq: jax.Array):
     activations = jax.nn.relu(jnp.dot(activations, w) + b)
 
   return activations
-'''
-if name == "main":
-  main()'''
+
+if __name__ == "__main__":
+    main()

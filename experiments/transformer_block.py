@@ -53,7 +53,7 @@ def block_forward(params: TransformerBlock, seq:jax.Array, num_heads, drop, prng
   seq = normalize(seq)
 
   #forward attention
-  attn, _ = attention.forward_attention(params.attn_layer, num_heads)
+  attn = attention.forward_attention(params.attn_layer, seq, num_heads)
 
   #dropout
   attn = dropout(attn, drop, prng_key)
@@ -102,6 +102,5 @@ def test():
 def main():
   test()
 
-'''
-if name == "main":
-  main()'''
+if __name__ == "__main__":
+    main()

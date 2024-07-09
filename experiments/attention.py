@@ -12,17 +12,20 @@ def init_attention(prng_key: jax.Array, batch_size: int, sequence_length: int, d
   cpu_0 = jax.devices('cpu')[0]
   with jax.default_device(cpu_0):
     initializer = jax.nn.initializers.normal(0.01)
-    q = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
-    k = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
-    v = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
+    q = initializer(prng_key, (d_model,), jnp.float32)
+    k = initializer(prng_key, (d_model,), jnp.float32)
+    v = initializer(prng_key, (d_model,), jnp.float32)
 
   return Attention(q, k, v)
 
-def forward_attention(params: Attention, num_heads: int):
+def forward_attention(params: Attention, seq: jax.Array, num_heads: int):
   #conduct multi head attention
-  return multi_head_attention(params.q, params.k, params.v, num_heads)
+  q = seq * params.q
+  k = seq * params.k
+  v = seq * params.v
+  return multi_head_attention(q, k, v, num_heads)
 
-def scaled_dot_product(q, k, v):
+def scaled_dot_product(q: jax.Array, k: jax.Array, v: jax.Array):
   '''
   Attention Calculation
   attention = softmax[ (QK^T)/sqrt(dk) ] * V
@@ -31,9 +34,9 @@ def scaled_dot_product(q, k, v):
   logits = jnp.matmul(q, jnp.swapaxes(k, -2, -1)) / jnp.sqrt(dk)
   weights = jax.nn.softmax(logits)
   output = jnp.matmul(weights, v)
-  return output, weights
+  return output
 
-def multi_head_attention(q, k, v, num_heads):
+def multi_head_attention(q: jax.Array, k: jax.Array, v: jax.Array, num_heads: int):
   '''
   q, k, v given with shape (batch_size, seq_length, d_model)
   '''
@@ -49,11 +52,11 @@ def multi_head_attention(q, k, v, num_heads):
   v = v.transpose(0, 2, 1, 3)
 
   #calc dot product of qkv and reshape
-  values, attention = scaled_dot_product(q, k, v)
+  values = scaled_dot_product(q, k, v)
   values = values.transpose(0, 2, 1, 3)
   values = values.reshape(batch_size, seq_length, d_model) # return to norm
 
-  return values, attention
+  return values
 
 def test():
   #initialize params
@@ -62,12 +65,15 @@ def test():
   batch_size = 32
   sequence_length = 16
 
+  initializer = jax.nn.initializers.normal(0.01)
+  seq = initializer(prng_key, (batch_size, sequence_length, d_model), jnp.float32)
+
   #init attn
   attn = init_attention(prng_key, batch_size, sequence_length, d_model)
 
   #forward pass
   num_heads = 8
-  values, attention = forward_attention(attn, num_heads)
+  values, attention = forward_attention(attn, seq, num_heads)
 
   #check shape
   print(values.shape)
@@ -75,6 +81,6 @@ def test():
 
 def main():
   test()
-'''
-if name == "main":
-  main()'''
+
+if __name__ == "__main__":
+    main()
