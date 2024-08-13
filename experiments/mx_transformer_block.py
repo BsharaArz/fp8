@@ -25,7 +25,6 @@ def dropout(seq, drop, prng_key):
   seq = mx.quantize(seq)
   return mx.mx_multiply(mask, seq) / (1.0 - drop)
 
-# @functools.partial(jax.checkpoint, policy=jax.checkpoint_policies.dots_with_no_batch_dims_saveable)
 def block_forward(params: transformer_block.TransformerBlock, seq:jax.Array, num_heads, drop, prng_key):
   '''
   conduct a forward pass for a singular transformer block

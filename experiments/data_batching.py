@@ -12,7 +12,23 @@ def process_file(file_name):
   file_tokenized = []
 
   #flatten file
-  for x in tqdm(file[:len(file)//20]):
+  for x in tqdm(file[:len(file)//5]):
+    file_tokenized.extend(tokenizer.tokenize(x))
+    
+  print("done") #tracker
+  return file_tokenized
+
+def process_file_valid(file_name):
+  #open file
+  print("open") #tracker
+  with open(file_name, 'r') as file:
+    file = file.readlines()
+
+  print("flattening") #tracker
+  file_tokenized = []
+
+  #flatten file
+  for x in tqdm(file):
     file_tokenized.extend(tokenizer.tokenize(x))
     
   print("done") #tracker

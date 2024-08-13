@@ -12,17 +12,17 @@ def init_attention(prng_key: jax.Array, batch_size: int, sequence_length: int, d
   cpu_0 = jax.devices('cpu')[0]
   with jax.default_device(cpu_0):
     initializer = jax.nn.initializers.normal(0.01)
-    q = initializer(prng_key, (d_model,), jnp.float32)
-    k = initializer(prng_key, (d_model,), jnp.float32)
-    v = initializer(prng_key, (d_model,), jnp.float32)
+    q = initializer(prng_key, (d_model, d_model), jnp.float32)
+    k = initializer(prng_key, (d_model, d_model), jnp.float32)
+    v = initializer(prng_key, (d_model, d_model), jnp.float32)
 
   return Attention(q, k, v)
 
 def forward_attention(params: Attention, seq: jax.Array, num_heads: int):
   #conduct multi head attention
-  q = seq * params.q
-  k = seq * params.k
-  v = seq * params.v
+  q = seq @ params.q
+  k = seq @ params.k
+  v = seq @ params.v
   return multi_head_attention(q, k, v, num_heads)
 
 def scaled_dot_product(q: jax.Array, k: jax.Array, v: jax.Array):

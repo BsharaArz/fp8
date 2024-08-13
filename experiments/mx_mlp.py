@@ -4,6 +4,7 @@ from typing_extensions import NamedTuple
 
 import mx
 import mlp
+import train
 
 #MLP object/init same as fp32 (on mlp.py)
 
@@ -14,12 +15,16 @@ def forward_mlp(params: mlp.MLP, seq: jax.Array):
   Do the necessary matrix multiplications and return the transformer sequence
   '''
   #wx+b computations
-  activations = mx.quantize(seq)
-  for w, b in params.layers[:-1]:
-    activations = mx.quantize(jax.nn.relu(mx.mx_matmul(activations, mx.quantize(w)) + b))
-
+  activations = seq
+  for w, b in params.layers:#[:-1]:
+    activations = jax.nn.relu(train.custom_matmul(activations, w) + b)
+  '''
   w, b = params.layers[-1]
-  activations = jax.nn.relu(mx.mx_matmul(activations, mx.quantize(w)) + b)
+  with jax.named_scope("QUANTIZATION"):
+    w = mx.quantize(w)
+  with jax.named_scope("MATMUL"):
+    mult = mx.mx_matmul(activations, w)
+  activations = jax.nn.relu(mult + b)'''
 
   return activations
 
